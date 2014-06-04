@@ -28,7 +28,9 @@
 ########################### 
 ##Ensure Patch is Present## 
 ########################### 
-$patchfile = Get-ChildItem C:\DEPL\INSTALL_FILES\sp2013Install\MarchPU\ | where{$_.Extension -eq ".exe"} 
+$folder = get-location
+
+$patchfile = Get-ChildItem $folder | where{$_.Extension -eq ".exe"} 
 if($patchfile -eq $null) 
 { 
   Write-Host "Unable to retrieve the file.  Exiting Script" -ForegroundColor Red 
@@ -126,30 +128,34 @@ Write-Host "Services are Stopped" -ForegroundColor Green
 Write-Host 
 Write-Host
 
-
-
-
 ################## 
-##Start patching## 
-################## 
-Write-Host "Patching now keep this PowerShell window open" -ForegroundColor Magenta 
-Write-Host 
-$starttime = Get-Date
+ ##Start patching## 
+ ################## 
+ Write-Host "Patching now keep this PowerShell window open" -ForegroundColor Magenta 
+ Write-Host 
+ $starttime = Get-Date
 
-$filename = $patchfile.BaseName    
-$arg = "/passive"
+ foreach ($patchfile in $patchfiles)
+ {
+  
 
-Start-Process $patchfile.FullName $arg
+$filename = $patchfile.basename 
+$arg = "/passive" 
+
+Write-Host $folder\$filename $arg
+Start-Process $folder\$filename $arg 
 
 Start-Sleep -seconds 20 
 $proc = get-process $filename 
-$proc.WaitForExit()
+$proc.WaitForExit() 
+  
+ Write-Host 
+ Write-Host "Patch installation complete for $filename" -foregroundcolor green 
+ Write-Host
+ }
 
 $finishtime = get-date 
-Write-Host 
-Write-Host "Patch installation complete" -foregroundcolor green 
-Write-Host
-
+ 
  
 
 ################## 

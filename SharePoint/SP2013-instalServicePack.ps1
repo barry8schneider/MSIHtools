@@ -2,18 +2,12 @@
   // 
   // Microsoft provides programming examples for illustration only, 
   // without warranty either expressed or implied, including, but not 
-// limited to, the implied warranties of merchantability and/or 
+  // limited to, the implied warranties of merchantability and/or 
   // fitness for a particular purpose. 
   // 
   // This sample assumes that you are familiar with the programming 
   // language being demonstrated and the tools used to create and debug 
-  // procedures. Microsoft support professionals can help explain the 
-  // functionality of a particular procedure, but they will not modify 
-  // these examples to provide added functionality or construct 
-  // procedures to meet your specific needs. If you have limited 
-  // programming experience, you may want to contact a Microsoft 
-  // Certified Partner or the Microsoft fee-based consulting line at 
-  //  (800) 936-5200 . 
+  // procedures. 
   // 
   // For more information about Microsoft Certified Partners, please 
   // visit the following Microsoft Web site: 
@@ -23,18 +17,22 @@
   // 
   // ---------------------------------------------------------- #>
 
- 
+
 
 ########################### 
 ##Ensure Patch is Present## 
 ########################### 
-$folder = get-location
+$fullPathIncFileName = $MyInvocation.MyCommand.Definition
 
-$patchfile = Get-ChildItem $folder | where{$_.Extension -eq ".exe"} 
-if($patchfile -eq $null) 
-{ 
-  Write-Host "Unable to retrieve the file.  Exiting Script" -ForegroundColor Red 
-  return 
+$currentScriptName = $MyInvocation.MyCommand.Name
+
+$folder = $fullPathIncFileName.Replace($currentScriptName, "")
+
+$patchfiles = Get-ChildItem $folder | where{$_.Extension -eq ".exe"} 
+if($patchfiles -eq $null) 
+{
+	Write-Host "Unable to retrieve the file.  Exiting Script" -ForegroundColor Red 
+	return 
 }
 
 ######################## 
@@ -49,65 +47,65 @@ $srv4 = get-service "OSearch15"
 $srv5 = get-service "SPSearchHostController"
 
 if(($srv4.status -eq "Running") -or ($srv5.status-eq "Running")) 
-  { 
-    Write-Host "Choose 1 to Pause Search Service Application" -ForegroundColor Cyan 
-    Write-Host "Choose 2 to leave Search Service Application running" -ForegroundColor Cyan 
-    $searchappresult = Read-Host "Press 1 or 2 and hit enter"  
-    Write-Host 
-   
+{
+	Write-Host "Choose 1 to Pause Search Service Application" -ForegroundColor Cyan 
+	Write-Host "Choose 2 to leave Search Service Application running" -ForegroundColor Cyan 
+	$searchappresult = Read-Host "Press 1 or 2 and hit enter" 
+	Write-Host 
 
-   if($searchappresult -eq 1) 
-    { 
-        $srchctr = 2 
-        Write-Host "Pausing the Search Service Application" -foregroundcolor yellow 
-        Write-Host "This could take a few minutes" -ForegroundColor Yellow 
-        $ssa = get-spenterprisesearchserviceapplication 
-        $ssa.pause() 
-    } 
-   
 
-    elseif($searchappresult -eq 2) 
-    { 
-        Write-Host "Continuing without pausing the Search Service Application" 
-    } 
-    else 
-    { 
-        Write-Host "Run the script again and choose option 1 or 2" -ForegroundColor Red 
-        Write-Host "Exiting Script" -ForegroundColor Red 
-        return 
-    } 
-  }
+	if($searchappresult -eq 1) 
+	{
+		$srchctr = 2 
+		Write-Host "Pausing the Search Service Application" -foregroundcolor yellow 
+		Write-Host "This could take a few minutes" -ForegroundColor Yellow 
+		$ssa = get-spenterprisesearchserviceapplication 
+		$ssa.pause() 
+	} 
+
+
+	elseif($searchappresult -eq 2) 
+	{
+		Write-Host "Continuing without pausing the Search Service Application" 
+	} 
+	else 
+	{
+		Write-Host "Run the script again and choose option 1 or 2" -ForegroundColor Red 
+		Write-Host "Exiting Script" -ForegroundColor Red 
+		return 
+	} 
+}
 
 Write-Host "Stopping Search Services if they are running" -foregroundcolor yellow 
 if($srv4.status -eq "Running") 
-  { 
-    $srch4srvctr = 2 
-    set-service -Name "OSearch15" -startuptype Disabled 
-    $srv4.stop() 
-  }
+{
+	$srch4srvctr = 2 
+	set-service -Name "OSearch15" -startuptype Disabled 
+	$srv4.stop() 
+}
 
 if($srv5.status -eq "Running") 
-  { 
-    $srch5srvctr = 2 
-    Set-service "SPSearchHostController" -startuptype Disabled 
-    $srv5.stop() 
-  }
+{
+	$srch5srvctr = 2 
+	Set-service "SPSearchHostController" -startuptype Disabled 
+	$srv5.stop() 
+}
 
 do 
-  { 
-    $srv6 = get-service "SPSearchHostController" 
-    if($srv6.status -eq "Stopped") 
-    { 
-        $yes = 1 
-    } 
-    Start-Sleep -seconds 10 
-  } 
-  until ($yes -eq 1)
+{
+	$srv6 = get-service "SPSearchHostController" 
+	if($srv6.status -eq "Stopped") 
+	{
+		$yes = 1 
+	} 
+	Start-Sleep -seconds 10 
+} 
+until ($yes -eq 1)
 
 Write-Host "Search Services are stopped" -foregroundcolor Green 
 Write-Host
 
- 
+
 
 ####################### 
 ##Stop Other Services## 
@@ -121,42 +119,44 @@ Write-Host "Stopping Services" -foregroundcolor yellow
 Write-Host
 
 $srv2 = get-service "SPTimerV4" 
-  if($srv2.status -eq "Running") 
-  {$srv2.stop()}
+if($srv2.status -eq "Running") 
+{	$srv2.stop()}
 
 Write-Host "Services are Stopped" -ForegroundColor Green 
 Write-Host 
 Write-Host
 
 ################## 
- ##Start patching## 
- ################## 
- Write-Host "Patching now keep this PowerShell window open" -ForegroundColor Magenta 
- Write-Host 
- $starttime = Get-Date
+##Start patching## 
+################## 
+Write-Host "Patching now keep this PowerShell window open" -ForegroundColor Magenta 
+Write-Host 
+$starttime = Get-Date
+$starttime
 
- foreach ($patchfile in $patchfiles)
- {
-  
+foreach ($patchfile in $patchfiles)
+{
 
-$filename = $patchfile.basename 
-$arg = "/passive" 
 
-Write-Host $folder\$filename $arg
-Start-Process $folder\$filename $arg 
+	$filename = $patchfile.basename 
+	$arg = "/passive" 
 
-Start-Sleep -seconds 20 
-$proc = get-process $filename 
-$proc.WaitForExit() 
-  
- Write-Host 
- Write-Host "Patch installation complete for $filename" -foregroundcolor green 
- Write-Host
- }
+	Write-Host $folder\$filename $arg
+	Start-Process $folder\$filename $arg 
+
+	Start-Sleep -seconds 20 
+	$proc = get-process $filename 
+	$proc.WaitForExit() 
+
+	Write-Host 
+	Write-Host "Patch installation complete for $filename" -foregroundcolor green 
+	Write-Host
+}
 
 $finishtime = get-date 
- 
- 
+$finishtime
+
+
 
 ################## 
 ##Start Services## 
@@ -177,22 +177,22 @@ $srv5 = get-service "SPSearchHostController"
 
 ###Ensuring Search Services were stopped by script before Starting" 
 if($srch4srvctr -eq 2) 
-{ 
-    set-service -Name "OSearch15" -startuptype Automatic 
-    $srv4.start() 
+{
+	set-service -Name "OSearch15" -startuptype Automatic 
+	$srv4.start() 
 } 
 if($srch5srvctr -eq 2) 
-{ 
-    Set-service "SPSearchHostController" -startuptype Automatic 
-    $srv5.start() 
+{
+	Set-service "SPSearchHostController" -startuptype Automatic 
+	$srv5.start() 
 }
 
 ###Resuming Search Service Application if paused### 
 if($srchctr -eq 2) 
-{ 
-    Write-Host "Resuming the Search Service Application" -foregroundcolor yellow 
-    $ssa = get-spenterprisesearchserviceapplication 
-    $ssa.resume() 
+{
+	Write-Host "Resuming the Search Service Application" -foregroundcolor yellow 
+	$ssa = get-spenterprisesearchserviceapplication 
+	$ssa.resume() 
 }
 
 Write-Host "Services are Started" -foregroundcolor green 

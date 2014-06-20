@@ -24,3 +24,5 @@ $readPolicy.PolicyRoleBindings.Add($wa.PolicyRoles.GetSpecialRole([Microsoft.Sha
 $wa.Properties["portalsuperuseraccount"] = $superUser
 $wa.Properties["portalsuperreaderaccount"] = $superReader
 $wa.Update()
+$wa.Properties["portalsuperuseraccount"] 
+$wa.Properties["portalsuperreaderaccount"] 

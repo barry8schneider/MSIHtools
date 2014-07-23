@@ -1,0 +1,1 @@
+Get-SPDatabase | Add-SPShellAdmin -Username CONTOSO\User1

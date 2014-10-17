@@ -16,34 +16,35 @@ $dnsroot = '@' + (Get-ADDomain).dnsroot
 # Import the file with the users. You can change the filename to reflect your file
 $users = Import-Csv .\users.csv
  
-Import-Module ActiveDirectory
- 
-$dnsroot = '@' + (Get-ADDomain).DNSRoot
-$accountPassword = (ConvertTo-SecureString "pass@word1" -AsPlainText -force)
- 
-Import-Csv SharePoint_Users.csv | foreach-object {
-     #In case of specific OU. For example: OU=ServiceAccount
-    if ($_.OU -ne "") { $OU = "OU=" + $_.OU + ',' + (Get-ADDomain).DistinguishedName }
-    else { $OU = (Get-ADDomain).UsersContainer }
- 
-    #In case of for example a service account without first and last name.
-    if ($_.FirstName -eq"" -and $_.LastName -eq "") { $Name = $_.SamAccountName }
-    else { $Name = ($_.FirstName + " " + $_.LastName) }
- 
-    if ($_.Manager -eq "") {
-        New-ADUser -Name $Name -SamAccountName $_.SamAccountName -DisplayName $Name
-            -Description $_.Description -GivenName $_.FirstName -Surname $_.LastName `
-            -EmailAddress ($_.SamAccountName + $dnsroot) -Title $_.Title `
-            -UserPrincipalName ($_.SamAccountName + $dnsroot) -Path $OU -Enabled $true `
-            -ChangePasswordAtLogon $false -PasswordNeverExpires $true `
-            -AccountPassword $accountPassword -PassThru
-    }
-    else {
-        New-ADUser -Name $Name -SamAccountName $_.SamAccountName -DisplayName $Name
-            -Description $_.Description -GivenName $_.FirstName -Surname $_.LastName `
-            -EmailAddress ($_.SamAccountName + $dnsroot) -Title $_.Title`
-            -UserPrincipalName ($_.SamAccountName + $dnsroot) -Path $OU -Enabled $true `
-            -ChangePasswordAtLogon $false -Manager $_.Manager -PasswordNeverExpires $true `
-            -AccountPassword $accountPassword -PassThru
-    }
-}
+foreach ($user in $users) {
+        if ($user.manager -eq "") # In case it's a service account or a boss
+            {
+                try {
+                    New-ADUser -SamAccountName $user.SamAccountName -Name ($user.FirstName + " " + $user.LastName) `
+                    -DisplayName ($user.FirstName + " " + $user.LastName) -GivenName $user.FirstName -Surname $user.LastName `
+                    -EmailAddress ($user.SamAccountName + $dnsroot) -UserPrincipalName ($user.SamAccountName + $dnsroot) `
+                    -Title $user.title -Enabled $true -ChangePasswordAtLogon $false -PasswordNeverExpires  $true `
+                    -AccountPassword $defpassword -PassThru `
+                    }
+                catch [System.Object]
+                    {
+                        Write-Output "Could not create user $($user.SamAccountName), $_"
+                    }
+            }
+            else
+             {
+                try {
+                    New-ADUser -SamAccountName $user.SamAccountName -Name ($user.FirstName + " " + $user.LastName) `
+                    -DisplayName ($user.FirstName + " " + $user.LastName) -GivenName $user.FirstName -Surname $user.LastName `
+                    -EmailAddress ($user.SamAccountName + $dnsroot) -UserPrincipalName ($user.SamAccountName + $dnsroot) `
+                    -Title $user.title -manager $user.manager `
+                    -Enabled $true -ChangePasswordAtLogon $false -PasswordNeverExpires  $true `
+                    -AccountPassword $defpassword -PassThru `
+                    }
+                catch [System.Object]
+                    {
+                        Write-Output "Could not create user $($user.SamAccountName), $_"
+                    }
+             }
+        
+   }
